@@ -8,15 +8,16 @@ Created on Tue Mar 26 00:32:08 2019
 import numpy as np
 import PyMieScatt as ps
 from integrate import integrateTrap
+import matplotlib.pyplot as plt
 
 table = np.loadtxt(
     'test.txt',
     delimiter="\t")
-print(table)
+#print(table)
 diameter = table[0, :][4:]
 concentrations = table[1::2, 4:]
 numberOfScans = np.ma.shape(concentrations)[0]
-print(numberOfScans)
+#print(numberOfScans)
 wavelengths = np.array([355, 450, 525, 532, 624, 630, 880, 1064])
 finalCoefficients = np.zeros((numberOfScans, np.ma.shape(wavelengths)[0] * 4))
 for i in range(0, (numberOfScans), 1):
@@ -26,6 +27,7 @@ for i in range(0, (numberOfScans), 1):
         diameterBin = 0
         QbackVector = np.zeros((np.ma.shape(concOfScan)[0], 1))
         QextVector = np.zeros((np.ma.shape(concOfScan)[0], 1))
+
         QscaVector = np.zeros((np.ma.shape(concOfScan)[0], 1))
         QabsVector = np.zeros((np.ma.shape(concOfScan)[0], 1))
         for d in diameter:
@@ -54,5 +56,7 @@ for i in range(0, (numberOfScans), 1):
         print(coefficients)
         finalCoefficients[i, columnStart:columnEnd] = coefficients
         countW += 1
-finalCoefficients = finalCoefficients.astype(int)
+#finalCoefficients = finalCoefficients.astype(int)
 np.savetxt(fname="results.txt", X=finalCoefficients, delimiter="\t", newline="\n")
+
+
