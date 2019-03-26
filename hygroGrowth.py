@@ -14,3 +14,10 @@ def wetdiameter(ddry, kappa, temperature, rh):
 
     return x
 
+def wetVolumefraction(ddry, rh, temperature, kappa):
+    d_wet = wetdiameter(ddry, kappa, temperature, rh)
+    f_vol = ddry**3./d_wet**3.
+    return f_vol
+
+
+
