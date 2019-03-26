@@ -8,6 +8,8 @@ from typing import Any, Union
 import PyMieScatt as ps
 from integrate import integrateTrap
 from hygroGrowth import *
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 # setup
 refIndAerosol = 1.53 + 0.015j
@@ -82,17 +84,25 @@ for i in range(0, numberOfScans, 1):
 
 
 kappa = np.linspace(0.1, 0.4, 40)
-diameter = np.linspace(0.1, 2.0, 100)
+diameter = np.linspace(0.1, 5.0, 500)
 result = np.zeros((diameter.shape[0] * kappa.shape[0], 3))
 
 count = 0
 for k in kappa:
     for d in diameter:
-        d_wet = wetdiameter(d, k, 20, 0.6)
+        d_wet = wetdiameter(d, k, 20, 0.9)/d
         row = np.array([k, d, d_wet])
         result[count, 0:3] = np.transpose(row)
         count += 1
 #print(result)
 np.savetxt(fname='d_wet_table.txt', X=result, delimiter="\t")
 
-
+x = result[:, 0]
+y = result[:, 1]
+z = result[:, 2]
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+cmhot = plt.get_cmap("hot")
+c = z
+ax.scatter(x, y, z, zdir='z', c=c, cmap=cmhot)
+plt.show()
