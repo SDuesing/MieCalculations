@@ -54,5 +54,5 @@ for i in range(0, (numberOfScans), 1):
         print(coefficients)
         finalCoefficients[i, columnStart:columnEnd] = coefficients
         countW += 1
-
+finalCoefficients = finalCoefficients.astype(int)
 np.savetxt(fname="results.txt", X=finalCoefficients, delimiter="\t", newline="\n")
