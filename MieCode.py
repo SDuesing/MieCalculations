@@ -20,10 +20,9 @@ if wet:
 else:
     print("dry")
 # setup end
-table = np.loadtxt(
+table = np.genfromtxt(
     'test.txt',
     delimiter="\t")
-
 diameter = table[0, :][4:]
 concentrations: float = table[1::2, 4:]
 numberOfScans = np.ma.shape(concentrations)[0]
