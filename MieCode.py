@@ -9,9 +9,9 @@ import PyMieScatt as ps
 from integrate import integrateTrap
 from hygroGrowth import *
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 # setup
+mixture = "HOM" # CS for core-shell
 refIndAerosol = 1.53 + 0.015j
 refIndWater = 1.33 + 1e-6j
 wet = True
@@ -41,9 +41,9 @@ for i in range(0, numberOfScans, 1):
         QabsVector = np.zeros((np.ma.shape(concOfScan)[0], 1))
         for d in diameter:
             # print(d, w)
-            numberConcentration = concOfScan[diameterBin]
+            numberConcentration: float = concOfScan[diameterBin]
             if wet:
-                #print("wet calculation")
+                # print("wet calculation")
                 fout = "results_wet.txt"
                 fVolWater = wetVolumefraction(kappa=0.3, rh=0.7, ddry=d, temperature=15)
                 refIndWet: Union[complex, Any] = refIndWater * (1. - fVolWater) + refIndAerosol * fVolWater
@@ -51,10 +51,12 @@ for i in range(0, numberOfScans, 1):
                 d = d_wet
                 refInd = refIndWet
             else:
-                #print("dry calculation")
                 refInd = refIndAerosol
                 fout = "results_dry.txt"
-            result = ps.MieQ(refInd, d, w, asDict=True)
+            if mixture=="CS":
+                #result = ps.MieQCoreShell(dCore=d*fVolBC**(1./3.)refInd, d, w, asDict=True)
+            elif mixture == "HOM":
+                result = ps.MieQ(refInd, d, w, asDict=True)
             QbackVector[diameterBin, 0] = result['Qback'] * np.pi * 1.0 / 4.0 * (
                     d * 1e-9) ** 2.0 * numberConcentration / (4.0 * np.pi)
             QabsVector[diameterBin, 0] = result['Qabs'] * np.pi * 1.0 / 4.0 * (
@@ -80,8 +82,6 @@ for i in range(0, numberOfScans, 1):
 
     np.savetxt(fname=fout, X=finalCoefficients, delimiter="\t")
 
-
-
 kappa = np.linspace(0.1, 0.4, 40)
 diameter = np.linspace(0.1, 5.0, 500)
 result = np.zeros((diameter.shape[0] * kappa.shape[0], 3))
@@ -89,11 +89,10 @@ result = np.zeros((diameter.shape[0] * kappa.shape[0], 3))
 count = 0
 for k in kappa:
     for d in diameter:
-        d_wet = wetdiameter(d, k, 20, 0.9)/d
+        d_wet = wetdiameter(d, k, 20, 0.9) / d
         row = np.array([k, d, d_wet])
         result[count, 0:3] = np.transpose(row)
         count += 1
-#print(result)
 np.savetxt(fname='d_wet_table.txt', X=result, delimiter="\t")
 
 x = result[:, 0]
