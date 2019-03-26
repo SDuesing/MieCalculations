@@ -49,9 +49,10 @@ for i in range(0, (numberOfScans), 1):
         # print(SigmaAbs, SigmaBack, SigmaSca, SigmaExt)
         columnStart = 0 + countW * 4
         columnEnd = 4 + countW * 4
-        coefficients = [SigmaExt, SigmaSca, SigmaAbs, SigmaBack]
+        coefficients = np.array([[SigmaExt, SigmaSca, SigmaAbs, SigmaBack]])
+        coefficients = coefficients/1e-6*1e6
         print(coefficients)
-        finalCoefficients[i, columnStart:columnEnd] = np.ma.transpose(coefficients)
+        finalCoefficients[i, columnStart:columnEnd] = coefficients
         countW += 1
 
 np.savetxt(fname="results.txt", X=finalCoefficients, delimiter="\t", newline="\n")

@@ -13,4 +13,5 @@ def integrateTrap(x, y):
     for i in range(0, (np.ma.shape(x)[0] - 1), 1):
         print(i)
         total = total + (y[(i + 1)] + y[i]) / 2. * math.log10(x[(i + 1)] / x[i])
-        return(total)
+        print(total)
+    return(total)
