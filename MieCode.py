@@ -7,27 +7,51 @@ Created on Tue Mar 26 00:32:08 2019
 
 import numpy as np
 import PyMieScatt as ps
+from integrate import integrateTrap
 
 table = np.loadtxt(
-    'C:/Users/duesing/Documents/PhD/MelCol/Optik/Calculations/Mie_R/20150626a_coarseMode_5micron_1particle_sd1.3.nsd',
-    sep="\t", )
+    'test.txt',
+    delimiter="\t")
 print(table)
 diameter = table[0, :][4:]
 concentrations = table[1::2, 4:]
-numberOfScans = np.ma.shape(concentrations)[1]
-
+numberOfScans = np.ma.shape(concentrations)[0]
+print(numberOfScans)
 wavelengths = np.array([355, 450, 525, 532, 624, 630, 880, 1064])
-for i in range(0, numberOfScans - 1):
+finalCoefficients = np.zeros((numberOfScans, np.ma.shape(wavelengths)[0] * 4))
+for i in range(0, (numberOfScans), 1):
     concOfScan = concentrations[i, :][:]
+    countW = 0
     for w in wavelengths:
-        bin = 0
+        diameterBin = 0
+        QbackVector = np.zeros((np.ma.shape(concOfScan)[0], 1))
+        QextVector = np.zeros((np.ma.shape(concOfScan)[0], 1))
+        QscaVector = np.zeros((np.ma.shape(concOfScan)[0], 1))
+        QabsVector = np.zeros((np.ma.shape(concOfScan)[0], 1))
         for d in diameter:
-            result = ps.MieQ(1.53 + 0.015j, d, w, asDict=True)*np.pi*1.0/4.0*(d*1.0e-9.0)**2*concOfScan[bin]
-            print(result)
-            # Qback = result['Qback'] * konz / 1e-6 * 1e6 * pi * 1 / 4 * (diameter * 1e-9) ^ 2)
-            # Qabs = result['Qabs']
-            # Qsca = result['Qsca']
-            # Qext = result['Qext']
+            # print(d, w)
+            numberConcentration = concOfScan[diameterBin]
+            result = ps.MieQ(1.53 + 0.015j, d, w, asDict=True)
+            QbackVector[diameterBin, 0] = result['Qback'] * np.pi * 1.0 / 4.0 * (
+                    d * 1e-9) ** 2.0 * numberConcentration / (4.0 * np.pi)
+            QabsVector[diameterBin, 0] = result['Qabs'] * np.pi * 1.0 / 4.0 * (d * 1e-9) ** 2.0 * numberConcentration
+            QscaVector[diameterBin, 0] = result['Qsca'] * np.pi * 1.0 / 4.0 * (d * 1e-9) ** 2.0 * numberConcentration
+            QextVector[diameterBin, 0] = result['Qext'] * np.pi * 1.0 / 4.0 * (d * 1e-9) ** 2.0 * numberConcentration
 
-            #np.trapz(y, x=diameter, axis=-1)
+            diameterBin += 1
+        # print(QextVector)
+        # print(QabsVector)
+        # print(QabsVector)
+        SigmaAbs = integrateTrap(y=QabsVector[:, 0], x=np.ma.transpose(diameter))
+        SigmaExt = integrateTrap(y=QextVector[:, 0], x=np.ma.transpose(diameter))
+        SigmaSca = integrateTrap(y=QscaVector[:, 0], x=np.ma.transpose(diameter))
+        SigmaBack = integrateTrap(y=QbackVector[:, 0], x=np.ma.transpose(diameter))
+        # print(SigmaAbs, SigmaBack, SigmaSca, SigmaExt)
+        columnStart = 0 + countW * 4
+        columnEnd = 4 + countW * 4
+        coefficients = [SigmaExt, SigmaSca, SigmaAbs, SigmaBack]
+        print(coefficients)
+        finalCoefficients[i, columnStart:columnEnd] = np.ma.transpose(coefficients)
+        countW += 1
 
+np.savetxt(fname="results.txt", X=finalCoefficients, delimiter="\t", newline="\n")
