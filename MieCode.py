@@ -20,8 +20,8 @@ if wet:
     print("wet")
 else:
     print("dry")
-filePathSizeDist = 'X:/p3_working/SDuesing-home/Data/MelCol/20150628/20150628b_lastcorr_smoothed_g0_diffkorr_ab8nm_totKorr_cpceff_inletcorr_final.nsd'
-filePathActos = 'X:\\p3_working\\SDuesing-home\\Data\\MelCol\\20150628\\20150628b_ver2.txt'
+filePathSizeDist = '20150628b_lastcorr_smoothed_g0_diffkorr_ab8nm_totKorr_cpceff_inletcorr_final.nsd'
+filePathActos = '20150628b_ver2.txt'
 
 fVolBC = 0.012  # 1.2% black carbon content
 numberConcentrationError: float = 0.1  # 10 percent error size distribution
@@ -113,6 +113,7 @@ for i in range(0, numberOfScans, 1):
                 numberConcentration: float = conc[diameterBin]
                 diameterBC = d * fVolBC ** (1. / 3.)
                 if wet:
+
                     d_wet = wetdiameter(kappa=Kappa, rh=relHum, ddry=d, temperature=T)
                     dParticle = d_wet
                     volumeWater = 1. / 6. * np.pi * (math.pow(d_wet, 3.) - math.pow(d, 3.))
@@ -128,7 +129,7 @@ for i in range(0, numberOfScans, 1):
                         # print(mShell)
                     elif mixture == "HOM":
                         fout = prefix + "_" + str(monteCarloIterations) + "_wet_HOM"
-                        fVoldry = wetVolumefraction(kappa=0.3, rh=0.7, ddry=d, temperature=15)
+                        fVoldry = wetVolumefraction(kappa=Kappa, rh=relHum, ddry=d, temperature=T)
                         refIndAerosol = fVolBC * refIndBC + (1. - fVolBC) * refIndSol
                         refIndWet: Union[complex, Any] = refIndWater * (1. - fVoldry) + refIndAerosol * fVoldry
                         refInd = refIndWet

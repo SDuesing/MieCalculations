@@ -1,4 +1,4 @@
-def drawProgressBar(percent, barLen = 20):
+def drawProgressBar(percent: float, barLen: object = 20) -> object:
     import sys
     sys.stdout.write("\r")
     progress = ""
