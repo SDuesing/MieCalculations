@@ -24,7 +24,7 @@ else:
 filePathSizeDist = 'X:/p3_working/SDuesing-home/Data/MelCol/20150628/20150628b_lastcorr_smoothed_g0_diffkorr_ab8nm_totKorr_cpceff_inletcorr_final.nsd'
 filePathActos = 'X:\\p3_working\\SDuesing-home\\Data\\MelCol\\20150628\\20150628b_ver2.txt'
 
-fVolBC = 0.05  # 5% black carbon content
+fVolBC = 0.012  # 1.2% black carbon content
 numberConcentrationError: float = 0.1  # 10 percent error size distribution
 
 monteCarloIterations = 50
@@ -97,10 +97,10 @@ for i in range(0, numberOfScans, 1):
             sdT = 5
             T = np.random.normal(meanT, sdT, 1)
 
-
-        #print(conc[0])
-
-
+            # generate normal distributed T from measured values
+            meanKappa = 0.366
+            sdKappa = 0.0121
+            Kappa = np.random.normal(meanKappa, sdKappa, 1)
 
         QBackVector = np.zeros((np.ma.shape(conc)[0], wavelengths.size), dtype=float)
         QExtVector = np.zeros((np.ma.shape(conc)[0], wavelengths.size), dtype=float)
@@ -114,7 +114,7 @@ for i in range(0, numberOfScans, 1):
                 numberConcentration: float = conc[diameterBin]
                 diameterBC = d * fVolBC ** (1. / 3.)
                 if wet:
-                    d_wet = wetdiameter(kappa=0.3, rh=relHum, ddry=d, temperature=T)
+                    d_wet = wetdiameter(kappa=Kappa, rh=relHum, ddry=d, temperature=T)
                     dParticle = d_wet
                     volumeWater = 1. / 6. * np.pi * (math.pow(d_wet, 3.) - math.pow(d, 3.))
                     volumeSol = np.pi * 1. / 6. * (math.pow(d, 3.) - math.pow(diameterBC, 3.))
