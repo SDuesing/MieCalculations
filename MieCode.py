@@ -12,6 +12,11 @@ import math
 import os
 from progressbar import drawProgressBar
 import random
+from extractAmbientConditions import extractAmbient
+import time
+
+
+start = time.time()
 
 # setup
 mixture = "CS"  # CS for core-shell
@@ -36,7 +41,7 @@ realPartSol = 1.53
 imPartWater = 1e-6
 imPartBc = 0.55
 imPartSol = 1e-6
-
+# deviations
 RealPartSolError = 0.5  # percent
 RealPartBCError = 4.  # percent
 RealPartWaterError = 0.5  # percent
@@ -45,6 +50,12 @@ imPartSolError = 0.  # percent
 imPartBCError = 6.6  # percent
 imPartWaterError = 0.  # percent
 
+scanDuration = 122.  # time of one scan
+
+colRH = 11
+colTemp = 7
+colTime = 1
+
 # setup end
 
 
@@ -52,13 +63,26 @@ tableSizeDist = np.genfromtxt(
     filePathSizeDist,
     delimiter="\t")
 
+actosData = np.genfromtxt(filePathActos, delimiter='\t')
+while (actosData[0, colTime] > tableSizeDist[1, 0]) | (actosData[-1, colTime] < tableSizeDist[-1, 0]):
+    if actosData[0, colTime] > tableSizeDist[1, 0]:
+        tableSizeDist = tableSizeDist[2:, :]
+    if actosData[-1, colTime] < tableSizeDist[-1, 0]:
+        tableSizeDist = tableSizeDist[:-2, :]
+
+#print(actosData[0, colTime], tableSizeDist[0, 0])
+#print(actosData[-1, colTime], tableSizeDist[-1, 0])
+
+
 file = os.path.basename(filePathSizeDist)
 prefix = file.split(sep=".")[0]
 
 diameter = tableSizeDist[0, :][4:]
 concentrations: float = tableSizeDist[1::2, 4:]
 ScanTimes = tableSizeDist[1::2, 0]
+
 numberOfScans = np.ma.shape(concentrations)[0]
+print("Number of Scans: "+str(numberOfScans))
 wavelengths = np.array([355, 450, 525, 532, 624, 630, 880, 1064])
 finalCoefficients = np.zeros((numberOfScans, np.ma.shape(wavelengths)[0] * 4), dtype=float)
 finalCoefficientsSd = np.zeros((numberOfScans, np.ma.shape(wavelengths)[0] * 4), dtype=float)
@@ -69,6 +93,7 @@ print(numberOfCalculations)
 n = 0.
 
 for i in range(0, numberOfScans, 1):
+    timeOfScan = ScanTimes[i]
     concOfScan = concentrations[i, :][:]
     SigmaBackVectorMonte = np.zeros((monteCarloIterations, wavelengths.size), dtype=float)
     SigmaExtVectorMonte = np.zeros((monteCarloIterations, wavelengths.size), dtype=float)
@@ -82,21 +107,20 @@ for i in range(0, numberOfScans, 1):
         refIndSol = np.random.normal(realPartSol, realPartSol * RealPartSolError / 100., 1) + np.random.normal(
             imPartSol, imPartSol * imPartSolError / 100., 1) * 1j
         if wet:
+            meanRH, sdRH, meanT, sdT = extractAmbient(actosData, rhCol=colRH, timeCol=colTime, tempCol=colTemp,
+                                                      startTime=ScanTimes[i],
+                                                      duration=scanDuration)
             refIndWater = np.random.normal(realPartWater, realPartWater * RealPartWaterError / 100.,
                                            1) + np.random.normal(
                 imPartWater, imPartWater * imPartWaterError / 100., 1) * 1j
 
             # generate normal distributed RH from measured values
-            meanRH = 0.6
-            sdRH = 0.05
-            relHum = np.random.normal(meanRH, sdRH, 1)
+            relHum = np.random.normal(meanRH/100., sdRH/100., 1)
 
             # generate normal distributed T from measured values
-            meanT = 20
-            sdT = 5
             T = np.random.normal(meanT, sdT, 1)
 
-            # generate normal distributed T from measured values
+            # generate normal distributed kappa from measured values
             meanKappa = 0.366
             sdKappa = 0.0121
             Kappa = np.random.normal(meanKappa, sdKappa, 1)
@@ -204,6 +228,9 @@ for i in range(0, numberOfScans, 1):
 
 np.savetxt(fname=fout+"_SD.txt", X=finalCoefficientsSd, delimiter="\t")
 np.savetxt(fname=fout+".txt", X=finalCoefficients, delimiter="\t")
+end = time.clock()
+print(time.time()-start)
 
-plt.plot(ScanTimes, finalCoefficients[:, 0], "bo")
+plt.plot(ScanTimes, finalCoefficients[:, 0], "o")
+plt.plot(actosData[:, colTime], actosData[:, colRH], "bo")
 plt.show()
