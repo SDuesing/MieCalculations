@@ -18,8 +18,10 @@ def wetdiameter(ddry, kappa, temperature, rh):
             8.69251 * 10e-6 * surfacetension / d * 298.15 / temp) - rh
 
     x = fsolve(f, ddry)
-
+    if kappa < 0:
+        print("Dry: " + str(ddry) + "wet: " + str(x) + "\n")
     return x
+
 
 
 def wetVolumefraction(ddry, rh, temperature, kappa):

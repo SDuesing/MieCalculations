@@ -13,7 +13,12 @@ import os
 from progressbar import drawProgressBar
 import random
 from extractAmbientConditions import extractAmbient
+import datetime as dt
 import time
+import pandas as pd
+from averageKappaCyrielle import averageKappa, findKappa
+
+#print(a)
 
 
 start = time.time()
@@ -27,7 +32,12 @@ else:
     print("dry")
 filePathSizeDist = '20150628b_lastcorr_smoothed_g0_diffkorr_ab8nm_totKorr_cpceff_inletcorr_final.nsd'
 filePathActos = '20150628b_ver2.txt'
+fileChemieLaurent = "tabelle_masse_volfrac_refind_kappa.txt"
 
+
+
+chemManual = False
+kappaManual = False
 fVolBC = 0.012  # 1.2% black carbon content
 numberConcentrationError: float = 0.1  # 10 percent error size distribution
 
@@ -55,6 +65,9 @@ scanDuration = 122.  # time of one scan
 colRH = 11
 colTemp = 7
 colTime = 1
+colVolBC = 13
+
+dHTDMA = [35,50,75,110,165,265]
 
 # setup end
 
@@ -62,6 +75,8 @@ colTime = 1
 tableSizeDist = np.genfromtxt(
     filePathSizeDist,
     delimiter="\t")
+
+
 
 actosData = np.genfromtxt(filePathActos, delimiter='\t')
 while (actosData[0, colTime] > tableSizeDist[1, 0]) | (actosData[-1, colTime] < tableSizeDist[-1, 0]):
@@ -74,13 +89,41 @@ while (actosData[0, colTime] > tableSizeDist[1, 0]) | (actosData[-1, colTime] < 
 #print(actosData[-1, colTime], tableSizeDist[-1, 0])
 
 
+date = filePathActos[0:8]
+datum = dt.datetime.strptime(date, "%Y%m%d")
+print(datum)
+datesActos = [dt.datetime(int(date[0:4]), int(date[4:6]), int(date[6:8])) + dt.timedelta(seconds=x) for x in actosData[:, colTime]]
+print(datesActos)
+
+
+if not chemManual:
+    tableChemistryLaurent = pd.read_csv(
+        fileChemieLaurent,
+        sep="\t", header=None)
+    datesChem = tableChemistryLaurent[0]
+    dateChemistry = [dt.datetime.strptime(date, "%d.%m.%Y %H:%M") for date in datesChem]
+    chemistryStart = int(np.argwhere(np.array(dateChemistry) > datesActos[0])[0])
+    print(datesActos[-1])
+    chemistryEnd = int(np.argwhere(np.array(dateChemistry) <= datesActos[-1])[-1])
+    volBC = np.mean(tableChemistryLaurent[colVolBC-1][chemistryStart:(chemistryEnd+1)])
+    print("volBC:" + str(volBC))
+
+if (not kappaManual) and wet:
+    fileCyrielle = "kappa_cyrielle.txt"
+    dHtdma = np.array([35, 50, 75, 110, 165, 265])
+    tableKappaCyr = pd.read_csv(
+        fileCyrielle,
+        sep="\t")
+    kappaArray = averageKappa(tableKappaCyr, str(date))
+
+
 file = os.path.basename(filePathSizeDist)
 prefix = file.split(sep=".")[0]
 
 diameter = tableSizeDist[0, :][4:]
 concentrations: float = tableSizeDist[1::2, 4:]
 ScanTimes = tableSizeDist[1::2, 0]
-
+datesScans = [dt.datetime(int(date[0:4]), int(date[4:6]), int(date[6:8])) + dt.timedelta(seconds=x) for x in ScanTimes]
 numberOfScans = np.ma.shape(concentrations)[0]
 print("Number of Scans: "+str(numberOfScans))
 wavelengths = np.array([355, 450, 525, 532, 624, 630, 880, 1064])
@@ -121,9 +164,10 @@ for i in range(0, numberOfScans, 1):
             T = np.random.normal(meanT, sdT, 1)
 
             # generate normal distributed kappa from measured values
-            meanKappa = 0.366
-            sdKappa = 0.0121
-            Kappa = np.random.normal(meanKappa, sdKappa, 1)
+            if kappaManual:
+                meanKappa = 0.366
+                sdKappa = 0.0121
+                Kappa = np.random.normal(meanKappa, sdKappa, 1)
 
         QBackVector = np.zeros((np.ma.shape(conc)[0], wavelengths.size), dtype=float)
         QExtVector = np.zeros((np.ma.shape(conc)[0], wavelengths.size), dtype=float)
@@ -137,7 +181,13 @@ for i in range(0, numberOfScans, 1):
                 numberConcentration: float = conc[diameterBin]
                 diameterBC = d * fVolBC ** (1. / 3.)
                 if wet:
-
+                    if not kappaManual:
+                        meanKappa = findKappa(d, kappas=kappaArray[0:6], diameter=dHtdma)
+                        sdKappa = findKappa(d, kappas=kappaArray[6:], diameter=dHtdma)
+                        #Kappa = np.random.normal(meanKappa, sdKappa, 1)
+                        Kappa = np.random.uniform(meanKappa-sdKappa, meanKappa+sdKappa, 1)
+                        if Kappa < 0:
+                            print(Kappa)
                     d_wet = wetdiameter(kappa=Kappa, rh=relHum, ddry=d, temperature=T)
                     dParticle = d_wet
                     volumeWater = 1. / 6. * np.pi * (math.pow(d_wet, 3.) - math.pow(d, 3.))
