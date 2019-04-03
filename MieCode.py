@@ -284,9 +284,8 @@ for m in range(np.size(mixtures)):
 
             np.savetxt(fname=fout + "_SD.txt", X=finalCoefficientsSd, delimiter="\t")
             np.savetxt(fname=fout + ".txt", X=finalCoefficients, delimiter="\t")
-            end = time.clock()
-            print(time.time() - start)
+            print("\nDuration: " + str(time.time() - start))
 
-plt.plot(ScanTimes, finalCoefficients[:, 0], "o")
+plt.plot(ScanTimes, finalCoefficients[:, 1], "o")
 plt.plot(actosData[:, colTime], actosData[:, colRH], "bo")
 plt.show()
