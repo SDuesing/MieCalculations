@@ -20,8 +20,8 @@ from averageKappaCyrielle import averageKappa, findKappa
 import glob
 
 # setup
-mixtures = ["CS", "HOM"]
-states = ["wet", "dry"]
+mixtures = ["CS"]  # ["CS", "HOM"]
+states = ["wet"]  # ["wet", "dry"]
 
 fileChemieLaurent = "tabelle_masse_volfrac_refind_kappa.txt"
 fCyrielle = "kappa_cyrielle.txt"
@@ -190,23 +190,28 @@ for m in range(np.size(mixtures)):
                                     Kappa = np.random.uniform(meanKappa - sdKappa, meanKappa + sdKappa, 1)
                                     if Kappa < 0:
                                         print(Kappa)
-                                # print("\nKappa: "+ str(Kappa) + " relHum: " + str(relHum) + " d: " + str(d) + " T: " + str(T))
-                                d_wet = wetdiameter(kappa=Kappa, rh=relHum, ddry=d, temperature=T)
-                                dParticle = d_wet
-                                volumeWater = 1. / 6. * np.pi * (math.pow(d_wet, 3.) - math.pow(d, 3.))
-                                volumeSol = np.pi * 1. / 6. * (math.pow(d, 3.) - math.pow(diameterBC, 3.))
-                                volumeBC = fVolBC * 1. / 6. * np.pi * math.pow(d, 3.)
-                                totalVolume = np.pi * 1. / 6. * math.pow(d_wet, 3.)
-                                # print("Total Volume - Sum of volumes: ", totalVolume - volumeWater - volumeSol - volumeBC)
+
                                 if mixture == "CS":
                                     fout = prefix + "_" + str(monteCarloIterations) + "_wet_CS"
+                                    d_wet = wetdiameterCS(kappa=Kappa, rh=relHum, ddry=d, temperature=T, fVBC=fVolBC)
+                                    dParticle = d_wet
+                                    volumeWater = 1. / 6. * np.pi * (math.pow(d_wet, 3.) - math.pow(d, 3.))
+                                    volumeSol = np.pi * 1. / 6. * (math.pow(d, 3.) - math.pow(diameterBC, 3.))
+                                    volumeBC = fVolBC * 1. / 6. * np.pi * math.pow(d, 3.)
+                                    totalVolume = np.pi * 1. / 6. * math.pow(d_wet, 3.)
                                     mShell = volumeSol / (volumeWater + volumeSol) * refIndSol + (
                                             1 - volumeSol / (volumeWater + volumeSol)) * refIndWater
                                     mCore = refIndBC
-                                    # print(mShell)
+
                                 elif mixture == "HOM":
+                                    d_wet = wetdiameterHOM(kappa=Kappa, rh=relHum, ddry=d, temperature=T)
+                                    dParticle = d_wet
+                                    volumeWater = 1. / 6. * np.pi * (math.pow(d_wet, 3.) - math.pow(d, 3.))
+                                    volumeSol = np.pi * 1. / 6. * (math.pow(d, 3.) - math.pow(diameterBC, 3.))
+                                    volumeBC = fVolBC * 1. / 6. * np.pi * math.pow(d, 3.)
+                                    totalVolume = np.pi * 1. / 6. * math.pow(d_wet, 3.)
                                     fout = prefix + "_" + str(monteCarloIterations) + "_wet_HOM"
-                                    fVoldry = wetVolumefraction(kappa=Kappa, rh=relHum, ddry=d, temperature=T)
+                                    fVoldry = wetVolumefractionHOM(kappa=Kappa, rh=relHum, ddry=d, temperature=T)
                                     refIndAerosol = fVolBC * refIndBC + (1. - fVolBC) * refIndSol
                                     refIndWet: Union[complex, Any] = refIndWater * (
                                                 1. - fVoldry) + refIndAerosol * fVoldry
@@ -224,7 +229,7 @@ for m in range(np.size(mixtures)):
                                     fout = prefix + "_" + str(monteCarloIterations) + "_dry_HOM"
 
                             if mixture == "CS":
-                                result = ps.MieQCoreShell(dCore=diameterBC, mShell=mShell, mCore=mCore, dShell=d,
+                                result = ps.MieQCoreShell(dCore=diameterBC, mShell=mShell, mCore=mCore, dShell=dParticle,
                                                           wavelength=wavelengths[countW], asDict=True)
                             elif mixture == "HOM":
                                 result = ps.MieQ(refInd, diameter=dParticle, wavelength=wavelengths[countW],
@@ -284,6 +289,7 @@ for m in range(np.size(mixtures)):
 
             np.savetxt(fname=fout + "_SD.txt", X=finalCoefficientsSd, delimiter="\t")
             np.savetxt(fname=fout + ".txt", X=finalCoefficients, delimiter="\t")
+            print("\nExtinktion 355nm: " + str(finalCoefficients[0, 1]))
             print("\nDuration: " + str(time.time() - start))
 
 plt.plot(ScanTimes, finalCoefficients[:, 1], "o")

@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 
-def wetdiameter(ddry, kappa, temperature, rh):
+def wetdiameterHOM(ddry, kappa, temperature, rh):
     # ddry in nm
     # kappa dimensionless
     # temperature in °C
@@ -22,10 +22,29 @@ def wetdiameter(ddry, kappa, temperature, rh):
         print("Dry: " + str(ddry) + "wet: " + str(x) + "\n")
     return x
 
+def wetdiameterCS(ddry, kappa, temperature, rh, fVBC):
+    ddry = ddry
+    dBC = fVBC**(1./3.)*ddry
+    kappaSH = kappa/(1-fVBC)
+    def f(d):
+        surfacetension = 0.072
+        temp = temperature + 273.15
+        return (d ** 3 - ddry ** 3 - dBC ** 3) / (d ** 3 - dBC ** 3 - (1 - kappaSH) * ddry ** 3) * math.exp(
+            8.69251 * 10e-6 * surfacetension / d * 298.15 / temp) - rh
+
+    x = fsolve(f, ddry)
+    if kappa < 0:
+        print("Dry: " + str(ddry) + "wet: " + str(x) + "\n")
+    return x
+
+def wetVolumefractionHOM(ddry, rh, temperature, kappa):
+    d_wet = wetdiameterHOM(ddry, kappa, temperature, rh)
+    f_vol = ddry ** 3. / d_wet ** 3.  # volume of dry particle to the total particle
+    return f_vol
 
 
-def wetVolumefraction(ddry, rh, temperature, kappa):
-    d_wet = wetdiameter(ddry, kappa, temperature, rh)
+def wetVolumefractionCS(ddry, rh, temperature, kappa, volfBC):
+    d_wet = wetdiameterCS(ddry, kappa, temperature, rh, fVBC=volfBC)
     f_vol = ddry ** 3. / d_wet ** 3.  # volume of dry particle to the total particle
     return f_vol
 
