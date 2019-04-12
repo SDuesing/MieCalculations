@@ -20,19 +20,19 @@ from averageKappaCyrielle import averageKappa, findKappa
 import glob
 
 # setup
-mixtures = ["CS"]  # ["CS", "HOM"]
-states = ["wet"]  # ["wet", "dry"]
+mixtures = ["HOM"]  # , "CS"]
+states = ["wet"]  # , "dry"]
 
 fileChemieLaurent = "tabelle_masse_volfrac_refind_kappa.txt"
 fCyrielle = "kappa_cyrielle.txt"
 
-fList = glob.glob("C:\\Users\\duesing\\PycharmProjects\\MieCalculations\\ACTOSNSD\\*.nsd")
-fListActos = glob.glob("C:\\Users\\duesing\\PycharmProjects\\MieCalculations\\ACTOSFiles\\*.txt")
+fList = glob.glob("X:\\p3_working\\SDuesing-home\\Data\\MelCol\\20150617\\20150617b_ground_actosscantimes.dat")#glob.glob("C:\\Users\\duesing\\PycharmProjects\\MieCalculations\\ACTOSNSD\\20150617b_lastcorr_smoothed_g0_diffkorr_ab8nm_totKorr_cpceff_inletcorr_final_ground.nsd")
+fListActos = glob.glob("C:\\Users\\duesing\\PycharmProjects\\MieCalculations\\ACTOSFiles\\20150617b_ver2.txt")
 # fList = glob.glob("*.nsd")
 # fListActos = glob.glob("*.dat")
 
 chemManual = False
-kappaManual = False
+kappaManual = True
 fVolBC = 0.012  # 1.2% black carbon content
 numberConcentrationError: float = 0.1  # 10 percent error size distribution
 
@@ -88,7 +88,7 @@ for m in range(np.size(mixtures)):
             while (actosData[0, colTime] > tableSizeDist[1, 0]) | (actosData[-1, colTime] < tableSizeDist[-1, 0]):
                 if actosData[0, colTime] > tableSizeDist[1, 0]:
                     tableSizeDist = tableSizeDist[2:, :]
-                if actosData[-1, colTime] < tableSizeDist[-1, 0]:
+                if actosData[-1, colTime] < tableSizeDist[-1, 0]+122.:
                     tableSizeDist = tableSizeDist[:-2, :]
             datesActos = [dt.datetime(int(date[0:4]), int(date[4:6]), int(date[6:8])) + dt.timedelta(seconds=x) for x in
                           actosData[:, colTime]]
@@ -167,8 +167,8 @@ for m in range(np.size(mixtures)):
 
                         # generate normal distributed kappa from measured values
                         if kappaManual:
-                            meanKappa = 0.366
-                            sdKappa = 0.0121
+                            meanKappa = 0.5
+                            sdKappa = 0.05
                             Kappa = np.random.normal(meanKappa, sdKappa, 1)
 
                     QBackVector = np.zeros((np.ma.shape(conc)[0], wavelengths.size), dtype=float)
@@ -287,8 +287,8 @@ for m in range(np.size(mixtures)):
                 finalCoefficients[i, 1:] = coefficients
                 finalCoefficientsSd[i, 1:] = coefficientsSd
 
-            np.savetxt(fname=fout + "_SD.txt", X=finalCoefficientsSd, delimiter="\t")
-            np.savetxt(fname=fout + ".txt", X=finalCoefficients, delimiter="\t")
+            np.savetxt(fname=fout + "_kappa0.5_SD.txt", X=finalCoefficientsSd, delimiter="\t")
+            np.savetxt(fname=fout + "_kappa0.5.txt", X=finalCoefficients, delimiter="\t")
             print("\nExtinktion 355nm: " + str(finalCoefficients[0, 1]))
             print("\nDuration: " + str(time.time() - start))
 
